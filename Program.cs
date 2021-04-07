@@ -9,7 +9,8 @@ namespace CryptoEmulator
             // The sample text to encrypt and decrypt.
             const string Text = "121212";
 
-            var aes256CbcEncryptionService = new Aes256CbcEncryptionService(Key);
+            var aes256CbcEncryptionService = 
+                new Aes256CbcEncryptionService(Key);
             // Encrypt and decrypt the sample text via the Aes256CbcEncrypter class.
             var encrypted = aes256CbcEncryptionService.Encrypt(Text);
             //var Decrypted = aes256CbcEncryptionService.Decrypt(Encrypted);
