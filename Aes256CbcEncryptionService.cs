@@ -1,5 +1,4 @@
 ﻿using System.Security.Cryptography;
-using System.IO;
 using System.Text;
 using System;
 using System.Collections.Generic;
@@ -20,7 +19,7 @@ namespace CryptoEmulator
                 BlockSize = 128,
                 Padding = PaddingMode.PKCS7,
                 Mode = CipherMode.CBC,
-                Key = _encoding.GetBytes(key)
+                Key = Convert.FromBase64String(key)
             };
         }
 
