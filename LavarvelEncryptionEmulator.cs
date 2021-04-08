@@ -54,11 +54,13 @@ namespace CryptoEmulator
                 JsonConvert.DeserializeObject<Dictionary<string, string>>(
                     json);
 
-            _aes.IV = Convert.FromBase64String(package["iv"]);
-            var data = Convert.FromBase64String(package["value"]);
+            var iv = package["iv"];
+            var value = package["value"];
 
-            var value = DecryptStringFromBytes_Aes(data);
-            return value;
+            _aes.IV = Convert.FromBase64String(iv);
+            var data = Convert.FromBase64String(value);
+
+            return DecryptStringFromBytes_Aes(data);
         }
         
 
