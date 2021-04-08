@@ -21,15 +21,25 @@ namespace ExampleClient
         {
             var encrypter = new Encrypter(KEY);
 
-            var decrypted = encrypter.Decrypt(DB_FIELD);
-
-            Console.WriteLine("Decrypted: {0}", decrypted);
-
-
+            Console.WriteLine("Encrypt then decrypt same data (TODO: figure out what the value wrapping is about)");
             var encrypted = encrypter.Encrypt("s:6:\"121212\";");
-            decrypted = encrypter.Decrypt(encrypted);
-
+            Console.WriteLine("Encrypted: {0}", encrypted);
+            var decrypted = encrypter.Decrypt(encrypted);
             Console.WriteLine("Decrypted: {0}", decrypted);
+
+            Console.WriteLine("Decrypt an earlier instance of this encrypter's output");
+            decrypted = encrypter.Decrypt("eyJpdiI6InlWb3k3bHFVU2d2eTBFRWFGQWRmVVE9PSIsInZhbHVlIjoieThYZnFpakFobEg1cnU2NDZmcmVPdz09IiwibWFjIjoiOGUyMjRhNzM2ZmVmYjFmYjVjY2ZlMjU4ZDk3ZWJiNTIwMTcwNzM4NmUyOTFkYTJiNGNiNjNhZTgwMjFlZTY2MiJ9");
+            Console.WriteLine("Decrypted: {0}", decrypted);
+
+            Console.WriteLine("Decrypt an instance of the Laravel encrypter's output");
+            try
+            {
+                decrypted = encrypter.Decrypt(DB_FIELD);
+            }
+            catch (InvalidOperationException)
+            {
+                Console.WriteLine("An original will not convert because the MAC cannot match.");
+            }
 
             Console.ReadLine();
         }

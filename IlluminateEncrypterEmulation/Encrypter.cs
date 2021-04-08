@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.IO;
+using System.Linq;
 
 namespace IlluminateEncrypterEmulation
 {
@@ -34,11 +35,11 @@ namespace IlluminateEncrypterEmulation
             // First encrypt the value
             var value = EncryptStringToBytes_Aes(plainText, _aes.Key, _aes.IV);
 
-            var iv = Base64Encode(_aes.IV);
-
             // Calculate a MAC for the encrypted value so that this value
             // can be verified later as not having been changed by the users.
-            var mac = GetHashedMac(iv, value);
+            var mac = Hash(_aes.IV, value);
+
+            var iv = Base64Encode(_aes.IV);
 
             var json = JsonEncode(Compact(iv, value, mac));
 
@@ -54,8 +55,7 @@ namespace IlluminateEncrypterEmulation
             }
             var payload = GetJsonPayload(encryptedPayload);
 
-            var iv = Base64Decode(payload["iv"]);
-
+            var iv = Base64Decode(payload["iv"]); 
             var value = Base64Decode(payload["value"]);
 
             // TODO serialize option
@@ -68,8 +68,34 @@ namespace IlluminateEncrypterEmulation
             var json = Base64DecodeToString(payload);
             var dict = JsonDecode(json);
 
-            // TODO validation
+            if (!ValidPayload(dict))
+            {
+                throw new InvalidOperationException("The payload is invalid.");
+            }
+            if (!ValidMac(dict))
+            {
+                throw new InvalidOperationException("The MAC is invalid.");
+            }
             return dict;
+        }
+
+
+        private bool ValidPayload(IDictionary<string, string> dict)
+        {
+            // TODO validation
+            return true;
+        }
+
+        private bool ValidMac(IDictionary<string, string> dict)
+        {
+            var mac = dict["mac"];
+
+            var iv = Base64Decode(dict["iv"]); 
+            var value = Base64Decode(dict["value"]);
+
+            var hash = Hash(iv, value);
+
+            return mac == hash;
         }
         
 
@@ -120,17 +146,22 @@ namespace IlluminateEncrypterEmulation
         }
 
 
-        private string GetHashedMac(string iv, byte[] value)
+        private string Hash(byte[] iv, byte[] value)
         {
-            // TODO figure out what the Illuminate code uses the iv for
+            var combined = Concat(iv, value);
             byte[] hmacSha256;
             using (var hmac = new HMACSHA256(_aes.Key))
             {
-                hmacSha256 = hmac.ComputeHash(value);
+                hmacSha256 = hmac.ComputeHash(combined);
             }
             var raw = BitConverter.ToString(hmacSha256);
             var tidied = raw.Replace("-", "").ToLower();
             return tidied;
+        }
+
+        private byte[] Concat(byte[] arr1, byte[] arr2)
+        {
+            return arr1.Concat(arr2).ToArray();
         }
 
 
