@@ -9,6 +9,7 @@ namespace IlluminateEncrypterEmulation
 {
     public class Encrypter
     {
+        // TODO try changing this to be the key and cipher
         private readonly AesManaged _aes;
 
         public Encrypter(string key)
@@ -41,28 +42,34 @@ namespace IlluminateEncrypterEmulation
 
             var json = JsonEncode(Compact(iv, value, mac));
 
+            // TODO serialize option
             return Base64Encode(json);
         }
 
-        public string Decrypt(string encrypted)
+        public string Decrypt(string encryptedPayload)
         {
-            if (string.IsNullOrEmpty(encrypted))
+            if (string.IsNullOrEmpty(encryptedPayload))
             {
-                throw new ArgumentNullException(nameof(encrypted));
+                throw new ArgumentNullException(nameof(encryptedPayload));
             }
-            var arr = Convert.FromBase64String(encrypted);
-            var json = Encoding.UTF8.GetString(arr);
-            var package = 
-                JsonConvert.DeserializeObject<Dictionary<string, string>>(
-                    json);
+            var payload = GetJsonPayload(encryptedPayload);
 
-            var iv = package["iv"];
-            var value = package["value"];
+            var iv = Base64Decode(payload["iv"]);
 
-            _aes.IV = Convert.FromBase64String(iv);
-            var data = Convert.FromBase64String(value);
+            var value = Base64Decode(payload["value"]);
 
-            return DecryptStringFromBytes_Aes(data);
+            // TODO serialize option
+            return DecryptStringFromBytes_Aes(value, _aes.Key, iv);
+        }
+
+
+        private IDictionary<string, string> GetJsonPayload(string payload)
+        {
+            var json = Base64DecodeToString(payload);
+            var dict = JsonDecode(json);
+
+            // TODO validation
+            return dict;
         }
         
 
@@ -78,9 +85,26 @@ namespace IlluminateEncrypterEmulation
             return package;
         }
 
+        private IDictionary<string, string> JsonDecode(string json)
+        {
+            return JsonConvert
+                .DeserializeObject<Dictionary<string, string>>(json);
+        }
+
         private string JsonEncode(IDictionary<string, string> dict)
         {
             return JsonConvert.SerializeObject(dict);
+        }
+
+        private byte[] Base64Decode(string s)
+        {
+            return Convert.FromBase64String(s);
+        }
+
+        private string Base64DecodeToString(string s)
+        {
+            var arr = Convert.FromBase64String(s);
+            return Encoding.UTF8.GetString(arr);
         }
 
         private string Base64Encode(string s)
@@ -97,6 +121,7 @@ namespace IlluminateEncrypterEmulation
 
         private string GetHashedMac(string iv, byte[] value)
         {
+            // TODO emulate use of iv
             byte[] hmacSha256;
             using (var hmac = new HMACSHA256(_aes.Key))
             {
@@ -146,7 +171,8 @@ namespace IlluminateEncrypterEmulation
             return encrypted;
         }
 
-        private string DecryptStringFromBytes_Aes(byte[] cipherText)
+        private static string DecryptStringFromBytes_Aes(
+            byte[] cipherText, byte[] key, byte[] iv)
         {
             // Check arguments.
             if (cipherText == null || cipherText.Length <= 0)
@@ -161,8 +187,8 @@ namespace IlluminateEncrypterEmulation
             // with the specified key and IV.
             using (AesManaged aesAlg = new AesManaged())
             {
-                aesAlg.Key = _aes.Key;
-                aesAlg.IV = _aes.IV;
+                aesAlg.Key = key;
+                aesAlg.IV = iv;
 
                 // Create a decryptor to perform the stream transform.
                 ICryptoTransform decryptor = aesAlg.CreateDecryptor(
