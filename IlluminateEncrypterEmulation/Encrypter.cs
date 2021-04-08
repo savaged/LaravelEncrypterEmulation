@@ -31,16 +31,16 @@ namespace IlluminateEncrypterEmulation
             }
             _aes.GenerateIV();
 
-            var data = EncryptStringToBytes_Aes(plainText);
-            var encryptedText = Convert.ToBase64String(data);
+            // First encrypt the value
+            var value = EncryptStringToBytes_Aes(plainText);
 
-            var mac = GetHashedMac(data);
+            // Calculate a MAC for the encrypted value so that this value
+            // can be verified later as not having been changed by the users.
+            var mac = GetHashedMac(value);
 
-            var package = PackDictionary(encryptedText, mac);
-            var arr = PackArray(package);
-            var value = Convert.ToBase64String(arr);
+            var json = JsonEncode(Compact(_aes.IV, value, mac));
 
-            return value;
+            return Base64Encode(json);
         }
 
         public string Decrypt(string encrypted)
@@ -65,32 +65,36 @@ namespace IlluminateEncrypterEmulation
         }
         
 
-        private IDictionary<string, string> PackDictionary(
-            string encryptedText, string mac)
+        private IDictionary<string, string> Compact(
+            byte[] iv, byte[] value, string mac)
         {
             var package = new Dictionary<string, string>
             {
-                { "iv", Convert.ToBase64String(_aes.IV) },
-                { "value", encryptedText },
+                { "iv", Convert.ToBase64String(iv) },
+                { "value", Convert.ToBase64String(value) },
                 { "mac", mac },
             };
             return package;
         }
 
-        private byte[] PackArray(IDictionary<string, string> dict)
+        private string JsonEncode(IDictionary<string, string> dict)
         {
-            var arr = Encoding.UTF8.GetBytes(
-                JsonConvert.SerializeObject(dict));
-            return arr;
+            return JsonConvert.SerializeObject(dict);
+        }
+
+        private string Base64Encode(string s)
+        {
+            var arr = Encoding.UTF8.GetBytes(s);
+            return Convert.ToBase64String(arr);
         }
 
 
-        private string GetHashedMac(byte[] data)
+        private string GetHashedMac(byte[] value)
         {
             byte[] hmacSha256;
             using (var hmac = new HMACSHA256(_aes.Key))
             {
-                hmacSha256 = hmac.ComputeHash(data);
+                hmacSha256 = hmac.ComputeHash(value);
             }
             var raw = BitConverter.ToString(hmacSha256);
             var tidied = raw.Replace("-", "").ToLower();
