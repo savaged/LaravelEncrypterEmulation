@@ -101,6 +101,7 @@ namespace IlluminateEncrypterEmulation
             return Convert.FromBase64String(s);
         }
 
+        // I hate PHP ;)
         private string Base64DecodeToString(string s)
         {
             var arr = Convert.FromBase64String(s);
@@ -121,7 +122,7 @@ namespace IlluminateEncrypterEmulation
 
         private string GetHashedMac(string iv, byte[] value)
         {
-            // TODO emulate use of iv
+            // TODO figure out what the Illuminate code uses the iv for
             byte[] hmacSha256;
             using (var hmac = new HMACSHA256(_aes.Key))
             {
