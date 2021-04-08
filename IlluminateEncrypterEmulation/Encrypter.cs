@@ -21,6 +21,7 @@ namespace IlluminateEncrypterEmulation
                 Mode = CipherMode.CBC,
                 Key = Convert.FromBase64String(key)
             };
+            _aes.GenerateIV();
         }
 
         public string Encrypt(string plainText)
@@ -29,16 +30,16 @@ namespace IlluminateEncrypterEmulation
             {
                 throw new ArgumentNullException(nameof(plainText));
             }
-            _aes.GenerateIV();
-
             // First encrypt the value
-            var value = EncryptStringToBytes_Aes(plainText);
+            var value = EncryptStringToBytes_Aes(plainText, _aes.Key, _aes.IV);
+
+            var iv = Base64Encode(_aes.IV);
 
             // Calculate a MAC for the encrypted value so that this value
             // can be verified later as not having been changed by the users.
-            var mac = GetHashedMac(value);
+            var mac = GetHashedMac(iv, value);
 
-            var json = JsonEncode(Compact(_aes.IV, value, mac));
+            var json = JsonEncode(Compact(iv, value, mac));
 
             return Base64Encode(json);
         }
@@ -66,11 +67,11 @@ namespace IlluminateEncrypterEmulation
         
 
         private IDictionary<string, string> Compact(
-            byte[] iv, byte[] value, string mac)
+            string iv, byte[] value, string mac)
         {
             var package = new Dictionary<string, string>
             {
-                { "iv", Convert.ToBase64String(iv) },
+                { "iv", iv },
                 { "value", Convert.ToBase64String(value) },
                 { "mac", mac },
             };
@@ -85,11 +86,16 @@ namespace IlluminateEncrypterEmulation
         private string Base64Encode(string s)
         {
             var arr = Encoding.UTF8.GetBytes(s);
+            return Base64Encode(arr);
+        }
+
+        private string Base64Encode(byte[] arr)
+        {
             return Convert.ToBase64String(arr);
         }
 
 
-        private string GetHashedMac(byte[] value)
+        private string GetHashedMac(string iv, byte[] value)
         {
             byte[] hmacSha256;
             using (var hmac = new HMACSHA256(_aes.Key))
@@ -102,7 +108,8 @@ namespace IlluminateEncrypterEmulation
         }
 
 
-        private byte[] EncryptStringToBytes_Aes(string plainText)
+        private static byte[] EncryptStringToBytes_Aes(
+            string plainText, byte[] key, byte[] iv)
         {
             // Check arguments.
             if (plainText == null || plainText.Length <= 0)
@@ -113,8 +120,8 @@ namespace IlluminateEncrypterEmulation
             // with the specified key and IV.
             using (AesManaged aesAlg = new AesManaged())
             {
-                aesAlg.Key = _aes.Key;
-                aesAlg.IV = _aes.IV;
+                aesAlg.Key = key;
+                aesAlg.IV = iv;
 
                 // Create an encryptor to perform the stream transform.
                 ICryptoTransform encryptor = 
