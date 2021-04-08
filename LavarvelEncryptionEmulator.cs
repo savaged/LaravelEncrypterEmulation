@@ -31,38 +31,54 @@ namespace CryptoEmulator
                 throw new ArgumentNullException(nameof(plainText));
             }
             var data = EncryptStringToBytes_Aes(plainText);
-            var encryptedText = Convert.ToString(data);
+            var encryptedText = Convert.ToBase64String(data);
 
             var mac = GetHashedMac(data);
-            var keyValues = new Dictionary<string, object>
+
+            var package = PackDictionary(encryptedText, mac);
+            var arr = PackArray(package);
+
+            var value = Convert.ToBase64String(arr);
+            return value;
+        }
+
+        public string Decrypt(string encrypted)
+        {
+            if (string.IsNullOrEmpty(encrypted))
+            {
+                throw new ArgumentNullException(nameof(encrypted));
+            }
+            var base64Decoded = Convert.FromBase64String(encrypted);
+            var base64DecodedStr = Encoding.UTF8.GetString(base64Decoded);
+            var package = 
+                JsonConvert.DeserializeObject<Dictionary<string, string>>(
+                    base64DecodedStr);
+
+            _aes.IV = Convert.FromBase64String(package["iv"]);
+            var data = Convert.FromBase64String(package["value"]);
+
+            var value = DecryptStringFromBytes_Aes(data);
+            return value;
+        }
+        
+
+        private IDictionary<string, string> PackDictionary(
+            string encryptedText, string mac)
+        {
+            var package = new Dictionary<string, string>
             {
                 { "iv", Convert.ToBase64String(_aes.IV) },
                 { "value", encryptedText },
                 { "mac", mac },
             };
-
-            var withMeta = Encoding.UTF8.GetBytes(
-                JsonConvert.SerializeObject(keyValues));
-
-            var value = Convert.ToBase64String(withMeta);
-            return value;
+            return package;
         }
 
-        public string Decrypt(string cipherText)
+        private byte[] PackArray(IDictionary<string, string> dict)
         {
-            // Base 64 decode
-            var base64Decoded = Convert.FromBase64String(cipherText);
-            var base64DecodedStr = Encoding.UTF8.GetString(base64Decoded);
-            // JSON decode
-            var payload = 
-                JsonConvert.DeserializeObject<Dictionary<string, string>>(
-                    base64DecodedStr);
-
-            _aes.IV = Convert.FromBase64String(payload["iv"]);
-            var data = Convert.FromBase64String(payload["value"]);
-
-            var value = DecryptStringFromBytes_Aes(data);
-            return value;
+            var arr = Encoding.UTF8.GetBytes(
+                JsonConvert.SerializeObject(dict));
+            return arr;
         }
 
 
