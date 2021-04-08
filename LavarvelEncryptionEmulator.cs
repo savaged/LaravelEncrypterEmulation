@@ -37,8 +37,8 @@ namespace CryptoEmulator
 
             var package = PackDictionary(encryptedText, mac);
             var arr = PackArray(package);
-
             var value = Convert.ToBase64String(arr);
+
             return value;
         }
 
@@ -48,11 +48,11 @@ namespace CryptoEmulator
             {
                 throw new ArgumentNullException(nameof(encrypted));
             }
-            var base64Decoded = Convert.FromBase64String(encrypted);
-            var base64DecodedStr = Encoding.UTF8.GetString(base64Decoded);
+            var arr = Convert.FromBase64String(encrypted);
+            var json = Encoding.UTF8.GetString(arr);
             var package = 
                 JsonConvert.DeserializeObject<Dictionary<string, string>>(
-                    base64DecodedStr);
+                    json);
 
             _aes.IV = Convert.FromBase64String(package["iv"]);
             var data = Convert.FromBase64String(package["value"]);
