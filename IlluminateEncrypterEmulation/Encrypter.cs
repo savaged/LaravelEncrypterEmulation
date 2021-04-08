@@ -63,7 +63,7 @@ namespace IlluminateEncrypterEmulation
         }
 
 
-        private IDictionary<string, string> GetJsonPayload(string payload)
+        private IDictionary<string, object> GetJsonPayload(string payload)
         {
             var json = Base64DecodeToString(payload);
             var dict = JsonDecode(json);
@@ -80,7 +80,7 @@ namespace IlluminateEncrypterEmulation
         }
 
 
-        private bool ValidPayload(IDictionary<string, string> dict)
+        private bool ValidPayload(IDictionary<string, object> dict)
         {
             var fieldsPresent = dict != null &&
                 dict.ContainsKey("iv") &&
@@ -94,9 +94,9 @@ namespace IlluminateEncrypterEmulation
             return fieldsPresent && ivMatches;
         }
 
-        private bool ValidMac(IDictionary<string, string> dict)
+        private bool ValidMac(IDictionary<string, object> dict)
         {
-            var mac = dict["mac"];
+            var mac = dict["mac"]?.ToString();
 
             var iv = Base64Decode(dict["iv"]); 
             var value = Base64Decode(dict["value"]);
@@ -107,10 +107,10 @@ namespace IlluminateEncrypterEmulation
         }
         
 
-        private IDictionary<string, string> Compact(
+        private IDictionary<string, object> Compact(
             string iv, byte[] value, string mac)
         {
-            var package = new Dictionary<string, string>
+            var package = new Dictionary<string, object>
             {
                 { "iv", iv },
                 { "value", Convert.ToBase64String(value) },
@@ -119,15 +119,20 @@ namespace IlluminateEncrypterEmulation
             return package;
         }
 
-        private IDictionary<string, string> JsonDecode(string json)
+        private IDictionary<string, object> JsonDecode(string json)
         {
             return JsonConvert
-                .DeserializeObject<Dictionary<string, string>>(json);
+                .DeserializeObject<Dictionary<string, object>>(json);
         }
 
-        private string JsonEncode(IDictionary<string, string> dict)
+        private string JsonEncode(IDictionary<string, object> dict)
         {
             return JsonConvert.SerializeObject(dict);
+        }
+
+        private byte[] Base64Decode(object o)
+        {
+            return Convert.FromBase64String(o?.ToString());
         }
 
         private byte[] Base64Decode(string s)
