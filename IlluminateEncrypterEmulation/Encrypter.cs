@@ -82,8 +82,16 @@ namespace IlluminateEncrypterEmulation
 
         private bool ValidPayload(IDictionary<string, string> dict)
         {
-            // TODO validation
-            return true;
+            var fieldsPresent = dict != null &&
+                dict.ContainsKey("iv") &&
+                dict.ContainsKey("value") &&
+                dict.ContainsKey("mac");
+
+            var incomingIvLength = Base64Decode(dict["iv"]).Length;
+            var ivLength = _aes.IV.Length;
+            var ivMatches = incomingIvLength == ivLength;
+
+            return fieldsPresent && ivMatches;
         }
 
         private bool ValidMac(IDictionary<string, string> dict)
