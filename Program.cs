@@ -6,18 +6,17 @@ namespace CryptoEmulator
     {
         static void Main(string[] args)
         {
-            var aes256CbcEncryptionService = new LaravelEncryptionEmulator(
-                KEY);
+            var encrypter = new IlluminateEncrypterEmulator(KEY);
 
-            var decrypted = aes256CbcEncryptionService.Decrypt(DB_FIELD);
+            var decrypted = encrypter.Decrypt(DB_FIELD);
 
             Console.WriteLine("Decrypted: {0}", decrypted);
 
 
-            //var encrypted = aes256CbcEncryptionService.Encrypt("121212");
-            //decrypted = aes256CbcEncryptionService.Decrypt(encrypted);
+            var encrypted = encrypter.Encrypt("s:7:\"TP00202\";");
+            decrypted = encrypter.Decrypt(encrypted);
 
-            //Console.WriteLine("Decrypted: {0}", decrypted);
+            Console.WriteLine("Decrypted: {0}", decrypted);
 
             Console.ReadLine();
         }

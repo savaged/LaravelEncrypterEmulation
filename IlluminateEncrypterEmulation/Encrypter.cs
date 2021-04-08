@@ -5,13 +5,13 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.IO;
 
-namespace CryptoEmulator
+namespace IlluminateEncrypterEmulation
 {
-    public class LaravelEncryptionEmulator
+    public class Encrypter
     {
         private readonly AesManaged _aes;
 
-        public LaravelEncryptionEmulator(string key)
+        public Encrypter(string key)
         {
             _aes = new AesManaged
             {
@@ -21,7 +21,6 @@ namespace CryptoEmulator
                 Mode = CipherMode.CBC,
                 Key = Convert.FromBase64String(key)
             };
-            _aes.GenerateIV();
         }
 
         public string Encrypt(string plainText)
@@ -30,6 +29,8 @@ namespace CryptoEmulator
             {
                 throw new ArgumentNullException(nameof(plainText));
             }
+            _aes.GenerateIV();
+
             var data = EncryptStringToBytes_Aes(plainText);
             var encryptedText = Convert.ToBase64String(data);
 
